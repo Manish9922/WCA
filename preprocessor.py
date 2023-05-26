@@ -37,6 +37,8 @@ def preprocess(data):
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
 
+    df = df.loc[df["user"] != 'group_notification']
+
     period = []
     for hour in df[['day_name', 'hour']]['hour']:
         if hour == 23:

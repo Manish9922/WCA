@@ -13,20 +13,17 @@ if uploaded_file is not None:
 
     # fetch unique users
     user_list = df['user'].unique().tolist()
-    c = user_list.count('group_notification')
-    for i in range(c):
-        user_list.remove('group_notification')
     user_list.sort()
     user_list.insert(0,"Overall")
 
-    selected_user = st.sidebar.selectbox("Show analysis wrt",user_list)
+    selected_user = st.sidebar.selectbox("Show Chat analysis wrt",user_list)
 
     if st.sidebar.button("Show Analysis"):
 
         # Stats Area
-        num_messages, words, num_media_messages, num_links = helper.fetch_stats(selected_user,df)
+        num_messages, words, num_media_messages, num_links, num_del_mes = helper.fetch_stats(selected_user,df)
         st.title("Top Statistics")
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
 
         with col1:
             st.header("Total Messages")
@@ -40,6 +37,9 @@ if uploaded_file is not None:
         with col4:
             st.header("Links Shared")
             st.title(num_links)
+        with col5:
+            st.header("Deleted Messages")
+            st.title(num_del_mes)
 
         # monthly timeline
         st.title("Monthly Timeline")
@@ -98,6 +98,13 @@ if uploaded_file is not None:
             with col2:
                 st.dataframe(new_df)
 
+            st.title('Most Messages deleted by')
+            x = helper.most_messages_deleted(df)
+            fig, ax = plt.subplots()
+            ax.bar(x.keys(), x.values(), color='purple')
+            plt.xticks(rotation='vertical')
+            st.pyplot(fig)
+
         # WordCloud
         st.title("Wordcloud")
         df_wc = helper.create_wordcloud(selected_user,df)
@@ -116,15 +123,34 @@ if uploaded_file is not None:
         st.title('Most commmon words')
         st.pyplot(fig)
 
+        #Semantic analysis of messages
+        st.title('Sentiment Analysis ')
+        nw=helper.negative_words(selected_user,df)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.header("Positive Messages")
+            st.title(str(100-nw)+"%")
+        with col2:
+            st.header("Negative Messages")
+            st.title(str(nw)+"%")
+        with col3:
+            st.header("Overall")
+            if nw>60:
+                st.title("Negative")
+            elif nw>40:
+                st.title("Neutral")
+            else:
+                st.title("Positive")
         # emoji analysis
         emoji_df = helper.emoji_helper(selected_user,df)
-        st.title("Emoji Analysis")
+        if emoji_df.shape[0]!=0:
+            st.title("Emoji Analysis")
 
-        col1,col2 = st.columns(2)
+            col1,col2 = st.columns(2)
 
-        with col1:
-            st.dataframe(emoji_df)
-        with col2:
-            fig,ax = plt.subplots()
-            ax.pie(emoji_df[1].head(),labels=emoji_df[0].head(),autopct="%0.2f")
-            st.pyplot(fig)
+            with col1:
+                st.dataframe(emoji_df)
+            with col2:
+                fig,ax = plt.subplots()
+                ax.pie(emoji_df[1].head(),labels=emoji_df[0].head(),autopct="%0.2f")
+                st.pyplot(fig)

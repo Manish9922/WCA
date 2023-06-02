@@ -54,6 +54,21 @@ def most_messages_deleted(df):
     dic = dict(itertools.islice(dic.items(), 5))
     return dic
 
+def most_media_messages(df):
+    dic = {}
+    msg = df['message'].tolist()
+    user = df['user'].tolist()
+    for i in range(df.shape[0]):
+        if msg[i] == '<Media omitted>\n':
+            if user[i] not in dic.keys():
+                dic[user[i]] = 1
+            else:
+                dic[user[i]] = dic[user[i]] + 1
+
+    dic = dict(sorted(dic.items(), key=lambda x: x[1], reverse=True))
+    dic = dict(itertools.islice(dic.items(), 5))
+    return dic
+
 def create_wordcloud(selected_user,df):
 
     f = open('stop_hinglish.txt', 'r')
@@ -100,7 +115,7 @@ def most_common_words(selected_user,df):
     most_common_df = pd.DataFrame(Counter(words).most_common(20))
     return most_common_df
 
-def negative_words(selected_user,df):
+def count_negative_words(selected_user,df):
     f = open('stop_hinglish.txt', 'r')
     stop_words = f.read()
 

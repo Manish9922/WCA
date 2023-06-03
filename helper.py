@@ -69,8 +69,7 @@ def most_media_messages(df):
     dic = dict(itertools.islice(dic.items(), 5))
     return dic
 
-def create_wordcloud(selected_user,df):
-
+def remove_unwanted_data(selected_user,df):
     f = open('stop_hinglish.txt', 'r')
     stop_words = f.read()
 
@@ -80,6 +79,10 @@ def create_wordcloud(selected_user,df):
     temp = df[df['user'] != 'group_notification']
     temp = temp[temp['message'] != '<Media omitted>\n']
     temp = temp[temp['message'] != 'This message was deleted\n']
+    return stop_words,temp
+
+def create_wordcloud(selected_user,df):
+    stop_words, temp = remove_unwanted_data(selected_user, df)
 
     def remove_stop_words(message):
         y = []
@@ -95,15 +98,7 @@ def create_wordcloud(selected_user,df):
 
 def most_common_words(selected_user,df):
 
-    f = open('stop_hinglish.txt','r')
-    stop_words = f.read()
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-
-    temp = df[df['user'] != 'group_notification']
-    temp = temp[temp['message'] != '<Media omitted>\n']
-    temp = temp[temp['message'] != 'This message was deleted\n']
+    stop_words,temp=remove_unwanted_data(selected_user,df)
 
     words = []
 
@@ -116,15 +111,7 @@ def most_common_words(selected_user,df):
     return most_common_df
 
 def count_negative_words(selected_user,df):
-    f = open('stop_hinglish.txt', 'r')
-    stop_words = f.read()
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-
-    temp = df[df['user'] != 'group_notification']
-    temp = temp[temp['message'] != '<Media omitted>\n']
-    temp = temp[temp['message'] != 'This message was deleted\n']
+    stop_words, temp = remove_unwanted_data(selected_user,df)
 
     words = []
 
@@ -175,9 +162,9 @@ def daily_timeline(selected_user,df):
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
-    daily_timeline = df.groupby('only_date').count()['message'].reset_index()
+    dt = df.groupby('only_date').count()['message'].reset_index()
 
-    return daily_timeline
+    return dt
 
 def week_activity_map(selected_user,df):
 

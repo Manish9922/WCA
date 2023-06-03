@@ -22,8 +22,9 @@ if uploaded_file is not None:
 
         # Stats Area
         num_messages, words, num_media_messages, num_links, num_del_mes = helper.fetch_stats(selected_user,df)
+        nw = helper.count_negative_words(selected_user, df)
         st.title("Top Statistics")
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4, = st.columns(4)
 
         with col1:
             st.header("Total Messages")
@@ -37,9 +38,26 @@ if uploaded_file is not None:
         with col4:
             st.header("Links Shared")
             st.title(num_links)
-        with col5:
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
             st.header("Deleted Messages")
             st.title(num_del_mes)
+        with col2:
+            st.header("Positive Messages")
+            st.title(str(100 - nw) + "%")
+        with col3:
+            st.header("Negative Messages")
+            st.title(str(nw) + "%")
+        with col4:
+            st.header("Overall Sentiment")
+            if nw > 60:
+                st.title("Negative")
+            elif nw > 40:
+                st.title("Neutral")
+            else:
+                st.title("Positive")
 
         # monthly timeline
         st.title("Monthly Timeline")
@@ -107,24 +125,6 @@ if uploaded_file is not None:
         st.title('Most commmon words')
         st.pyplot(fig)
 
-        #Semantic analysis of messages
-        st.title('Sentiment Analysis ')
-        nw=helper.count_negative_words(selected_user,df)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.header("Positive Messages")
-            st.title(str(100-nw)+"%")
-        with col2:
-            st.header("Negative Messages")
-            st.title(str(nw)+"%")
-        with col3:
-            st.header("Overall")
-            if nw>60:
-                st.title("Negative")
-            elif nw>40:
-                st.title("Neutral")
-            else:
-                st.title("Positive")
         # emoji analysis
         emoji_df = helper.emoji_helper(selected_user,df)
         if emoji_df.shape[0]!=0:

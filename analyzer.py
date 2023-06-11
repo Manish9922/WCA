@@ -17,7 +17,10 @@ def fetch_stats(selected_user,df):
 
     # fetch the total number of words
     words = []
-    for message in df['message']:
+    temp = df[df['user'] != 'group_notification']
+    temp = temp[temp['message'] != '<Media omitted>\n']
+    temp = temp[temp['message'] != 'This message was deleted\n']
+    for message in temp['message']:
         words.extend(message.split())
 
     # fetch number of media messages
@@ -54,16 +57,25 @@ def most_messages_deleted(df):
     dic = dict(itertools.islice(dic.items(), 5))
     return dic
 
-def most_media_messages(df):
+def most_negative_messages(df):
+    f = open('negative_words.txt', 'r')
+    neg_words = f.read()
+    nl = []
+    for word in neg_words.lower().split():
+        nl.append(word)
     dic = {}
-    msg = df['message'].tolist()
-    user = df['user'].tolist()
-    for i in range(df.shape[0]):
-        if msg[i] == '<Media omitted>\n':
-            if user[i] not in dic.keys():
-                dic[user[i]] = 1
-            else:
-                dic[user[i]] = dic[user[i]] + 1
+    temp = df[df['message'] != '<Media omitted>\n']
+    temp = temp[temp['message'] != 'This message was deleted\n']
+    msg = temp['message'].tolist()
+    user = temp['user'].tolist()
+    for i in range(temp.shape[0]):
+        message=msg[i].lower().split()
+        for j in range(len(message)):
+            if message[j] in nl:
+                if user[i] not in dic.keys():
+                    dic[user[i]] = 1
+                else:
+                    dic[user[i]] = dic[user[i]] + 1
 
     dic = dict(sorted(dic.items(), key=lambda x: x[1], reverse=True))
     dic = dict(itertools.islice(dic.items(), 5))
@@ -72,6 +84,9 @@ def most_media_messages(df):
 def remove_unwanted_data(selected_user,df):
     f = open('stop_hinglish.txt', 'r')
     stop_words = f.read()
+    sw = []
+    for word in stop_words.lower().split():
+        sw.append(word)
 
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
@@ -79,7 +94,8 @@ def remove_unwanted_data(selected_user,df):
     temp = df[df['user'] != 'group_notification']
     temp = temp[temp['message'] != '<Media omitted>\n']
     temp = temp[temp['message'] != 'This message was deleted\n']
-    return stop_words,temp
+
+    return sw,temp
 
 def create_wordcloud(selected_user,df):
     stop_words, temp = remove_unwanted_data(selected_user, df)
@@ -93,8 +109,9 @@ def create_wordcloud(selected_user,df):
 
     wc = WordCloud(width=500,height=500,min_font_size=10,background_color='white')
     temp['message'] = temp['message'].apply(remove_stop_words)
-    df_wc = wc.generate(temp['message'].str.cat(sep=" "))
-    return df_wc
+    if temp.shape[0]!=0:
+        df_wc = wc.generate(temp['message'].str.cat(sep=" "))
+        return df_wc
 
 def most_common_words(selected_user,df):
 
@@ -117,18 +134,22 @@ def count_negative_words(selected_user,df):
 
     for message in temp['message']:
         for word in message.lower().split():
-            if word not in stop_words and word not in words:
+            if word not in stop_words:
                 words.append(word)
 
     f = open('negative_words.txt', 'r')
     neg_words = f.read()
+    nl = []
+    for word in neg_words.lower().split():
+        nl.append(word)
     nw=[]
     for i in range(len(words)):
-        words[i]=words[i].lower()
-        if words[i] in neg_words:
+        if words[i] in nl:
             nw.append(words[i])
-
-    return int(len(nw)/len(words)*100)
+    if(len(words)!=0):
+        return int(len(nw)/len(words)*100)
+    else:
+        return 0
 
 def emoji_helper(selected_user,df):
     if selected_user != 'Overall':

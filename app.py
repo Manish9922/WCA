@@ -20,9 +20,15 @@ if uploaded_file is not None:
 
     if st.sidebar.button("Show Analysis"):
 
-        # Stats Area
-        num_messages, words, num_media_messages, num_links, num_del_mes = analyzer.fetch_stats(selected_user,df)
+        num_messages, num_of_words, num_media_messages, num_links, num_del_mes = analyzer.fetch_stats(selected_user,df)
+        if selected_user == 'Overall':
+            md = analyzer.most_messages_deleted(df)
+
+        df = analyzer.remove_unwanted_data(selected_user, df)
+
         nw = analyzer.count_negative_words(selected_user, df)
+
+        # Stats Area
         st.title("Top Statistics")
         col1, col2, col3, col4, = st.columns(4)
 
@@ -31,7 +37,7 @@ if uploaded_file is not None:
             st.title(num_messages)
         with col2:
             st.header("Total Words")
-            st.title(words)
+            st.title(num_of_words)
         with col3:
             st.header("Media Shared")
             st.title(num_media_messages)
@@ -52,9 +58,9 @@ if uploaded_file is not None:
             st.title(str(nw) + "%")
         with col4:
             st.header("Overall Sentiment")
-            if nw > 60:
+            if nw > 50:
                 st.title("Negative")
-            elif nw > 40:
+            elif nw > 25:
                 st.title("Neutral")
             else:
                 st.title("Positive")
@@ -78,9 +84,8 @@ if uploaded_file is not None:
 
             with col1:
                 st.title('Most Messages deleted by')
-                x = analyzer.most_messages_deleted(df)
                 fig, ax = plt.subplots()
-                ax.bar(x.keys(), x.values(), color='purple')
+                ax.bar(md.keys(), md.values(), color='purple')
                 plt.xticks(rotation='vertical')
                 st.pyplot(fig)
             with col2:
@@ -91,76 +96,84 @@ if uploaded_file is not None:
                 plt.xticks(rotation='vertical')
                 st.pyplot(fig)
 
-        # WordCloud
-        st.title("Wordcloud")
-        df_wc = analyzer.create_wordcloud(selected_user,df)
-        fig,ax = plt.subplots()
-        ax.imshow(df_wc)
-        st.pyplot(fig)
+        if num_of_words != 0:
 
-        # most common words
-        most_common_df = analyzer.most_common_words(selected_user,df)
+            # WordCloud
+            st.title("Wordcloud")
+            df_wc = analyzer.create_wordcloud(selected_user,df)
+            fig,ax = plt.subplots()
+            ax.imshow(df_wc)
+            st.pyplot(fig)
 
-        fig,ax = plt.subplots()
+            # most common words
+            most_common_df = analyzer.most_common_words(selected_user,df)
 
-        ax.barh(most_common_df[0],most_common_df[1])
-        plt.xticks(rotation='vertical')
+            fig,ax = plt.subplots()
 
-        st.title('Most commmon words')
-        st.pyplot(fig)
+            ax.barh(most_common_df[0],most_common_df[1])
+            plt.xticks(rotation='vertical')
 
-        # emoji analysis
-        emoji_df = analyzer.emoji_helper(selected_user,df)
-        if emoji_df.shape[0]!=0:
-            st.title("Emoji Analysis")
+            st.title('Most commmon words')
+            st.pyplot(fig)
 
-            col1,col2 = st.columns(2)
+            # emoji analysis
+            emoji_df = analyzer.emoji_helper(selected_user,df)
+            if emoji_df.shape[0]!=0:
+                st.title("Emoji Analysis")
+
+                col1,col2 = st.columns(2)
+
+                with col1:
+                    st.dataframe(emoji_df)
+                with col2:
+                    fig,ax = plt.subplots()
+                    ax.pie(emoji_df[1].head(),labels=emoji_df[0].head(),autopct="%0.2f")
+                    st.pyplot(fig)
+
+            #Timeline
+            st.title('Activity Timeline')
+            col1, col2 = st.columns(2)
 
             with col1:
-                st.dataframe(emoji_df)
-            with col2:
-                fig,ax = plt.subplots()
-                ax.pie(emoji_df[1].head(),labels=emoji_df[0].head(),autopct="%0.2f")
+                # daily timeline
+                st.title("Daily Timeline")
+                daily_timeline = analyzer.daily_timeline(selected_user, df)
+                fig, ax = plt.subplots()
+                ax.plot(daily_timeline['only_date'], daily_timeline['message'], color='black')
+                plt.xticks(rotation='vertical')
                 st.pyplot(fig)
 
-        # monthly timeline
-        st.title("Monthly Timeline")
-        timeline = analyzer.monthly_timeline(selected_user, df)
-        fig, ax = plt.subplots()
-        ax.plot(timeline['time'], timeline['message'], color='green')
-        plt.xticks(rotation='vertical')
-        st.pyplot(fig)
+            with col2:
+                # monthly timeline
+                st.title("Monthly Timeline")
+                timeline = analyzer.monthly_timeline(selected_user, df)
+                fig, ax = plt.subplots()
+                ax.plot(timeline['time'], timeline['message'], color='green')
+                plt.xticks(rotation='vertical')
+                st.pyplot(fig)
 
-        # daily timeline
-        st.title("Daily Timeline")
-        daily_timeline = analyzer.daily_timeline(selected_user, df)
-        fig, ax = plt.subplots()
-        ax.plot(daily_timeline['only_date'], daily_timeline['message'], color='black')
-        plt.xticks(rotation='vertical')
-        st.pyplot(fig)
+            # activity map
+            st.title('Activity Map')
+            col1, col2 = st.columns(2)
 
-        # activity map
-        st.title('Activity Map')
-        col1, col2 = st.columns(2)
+            with col1:
+                st.header("Most busy day")
+                busy_day = analyzer.week_activity_map(selected_user, df)
+                fig, ax = plt.subplots()
+                ax.bar(busy_day.index, busy_day.values, color='purple')
+                plt.xticks(rotation='vertical')
+                st.pyplot(fig)
 
-        with col1:
-            st.header("Most busy day")
-            busy_day = analyzer.week_activity_map(selected_user, df)
+            with col2:
+                st.header("Most busy month")
+                busy_month = analyzer.month_activity_map(selected_user, df)
+                fig, ax = plt.subplots()
+                ax.bar(busy_month.index, busy_month.values, color='orange')
+                plt.xticks(rotation='vertical')
+                st.pyplot(fig)
+
+            st.title("Weekly Activity HeatMap")
+            user_heatmap = analyzer.activity_heatmap(selected_user, df)
             fig, ax = plt.subplots()
-            ax.bar(busy_day.index, busy_day.values, color='purple')
-            plt.xticks(rotation='vertical')
+            ax = sns.heatmap(user_heatmap)
             st.pyplot(fig)
-
-        with col2:
-            st.header("Most busy month")
-            busy_month = analyzer.month_activity_map(selected_user, df)
-            fig, ax = plt.subplots()
-            ax.bar(busy_month.index, busy_month.values, color='orange')
-            plt.xticks(rotation='vertical')
-            st.pyplot(fig)
-
-        st.title("Weekly Activity Map")
-        user_heatmap = analyzer.activity_heatmap(selected_user, df)
-        fig, ax = plt.subplots()
-        ax = sns.heatmap(user_heatmap)
-        st.pyplot(fig)

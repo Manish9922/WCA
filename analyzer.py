@@ -8,12 +8,20 @@ import emoji
 extract = URLExtract()
 
 def remove_unwanted_data(selected_user, df):
+
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 
     df = df[df['user'] != 'group_notification']
     df = df[df['message'] != '<Media omitted>\n']
     df = df[df['message'] != 'This message was deleted\n']
+
+    links = []
+    for message in df['message']:
+        links.extend(extract.find_urls(message))
+
+    for i in range(len(links)):
+        df = df[df['message'] != str(links[i]+'\n')]
 
     return df
 
@@ -50,6 +58,7 @@ def most_busy_users(df):
     return x,df
 
 def most_messages_deleted(df):
+
     dic = {}
     msg = df['message'].tolist()
     user = df['user'].tolist()
@@ -65,6 +74,7 @@ def most_messages_deleted(df):
     return dic
 
 def most_negative_messages(df):
+
     f = open('negative_words.txt', 'r')
     neg_words = f.read()
     nl = []
@@ -101,6 +111,7 @@ def create_wordcloud(selected_user,df):
         return df_wc
 
 def most_common_words(selected_user,df):
+
     f = open('stop_hinglish.txt', 'r')
     stop_words = f.read()
     sw = []
@@ -138,6 +149,7 @@ def count_negative_words(selected_user,df):
         return 0
 
 def emoji_helper(selected_user,df):
+
     if selected_user != 'Overall':
         df = df[df['user'] == selected_user]
 

@@ -7,6 +7,7 @@ st.sidebar.title("Whatsapp Chat Analyzer")
 
 uploaded_file = st.sidebar.file_uploader("Choose a file")
 if uploaded_file is not None:
+
     bytes_data = uploaded_file.getvalue()
     data = bytes_data.decode("utf-8")
     df = data_framing.frame_data(data)
@@ -113,7 +114,7 @@ if uploaded_file is not None:
             ax.barh(most_common_df[0],most_common_df[1])
             plt.xticks(rotation='vertical')
 
-            st.title('Most commmon words')
+            st.title('Most frequent words')
             st.pyplot(fig)
 
             # emoji analysis

@@ -96,7 +96,7 @@ def most_negative_messages(df):
     dic = dict(itertools.islice(dic.items(), 5))
     return dic
 
-def create_wordcloud(selected_user,df):
+def create_wordcloud(df):
 
     def wordlist(message):
         y = []
@@ -110,7 +110,7 @@ def create_wordcloud(selected_user,df):
         df_wc = wc.generate(df['message'].str.cat(sep=" "))
         return df_wc
 
-def most_common_words(selected_user,df):
+def remove_hinglish(df):
 
     f = open('stop_hinglish.txt', 'r')
     stop_words = f.read()
@@ -124,10 +124,30 @@ def most_common_words(selected_user,df):
             if word not in sw:
                 words.append(word)
 
+    return words
+
+def most_common_words(df):
+
+    words = remove_hinglish(df)
     most_common_df = pd.DataFrame(Counter(words).most_common(20))
     return most_common_df
 
-def count_negative_words(selected_user,df):
+def most_neg_words(df):
+
+    words = remove_hinglish(df)
+    f = open('negative_words.txt', 'r')
+    neg_words = f.read()
+    nl = []
+    for word in neg_words.lower().split():
+        nl.append(word)
+    nw = []
+    for i in range(len(words)):
+        if words[i] in nl:
+            nw.append(words[i])
+    most_common_df = pd.DataFrame(Counter(nw).most_common(20))
+    return most_common_df
+
+def count_negative_words(df):
 
     words = []
     for message in df['message']:
@@ -148,10 +168,7 @@ def count_negative_words(selected_user,df):
     else:
         return 0
 
-def emoji_helper(selected_user,df):
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
+def emoji_helper(df):
 
     emojis = []
     for message in df['message']:
@@ -161,10 +178,7 @@ def emoji_helper(selected_user,df):
 
     return emoji_df
 
-def monthly_timeline(selected_user,df):
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
+def monthly_timeline(df):
 
     timeline = df.groupby(['year', 'month_num', 'month']).count()['message'].reset_index()
 
@@ -175,35 +189,3 @@ def monthly_timeline(selected_user,df):
     timeline['time'] = time
 
     return timeline
-
-def daily_timeline(selected_user,df):
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-
-    dt = df.groupby('only_date').count()['message'].reset_index()
-
-    return dt
-
-def week_activity_map(selected_user,df):
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-
-    return df['day_name'].value_counts()
-
-def month_activity_map(selected_user,df):
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-
-    return df['month'].value_counts()
-
-def activity_heatmap(selected_user,df):
-
-    if selected_user != 'Overall':
-        df = df[df['user'] == selected_user]
-
-    user_heatmap = df.pivot_table(index='day_name', columns='period', values='message', aggfunc='count').fillna(0)
-
-    return user_heatmap

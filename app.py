@@ -27,7 +27,7 @@ if uploaded_file is not None:
 
         df = analyzer.remove_unwanted_data(selected_user, df)
 
-        nw = analyzer.count_negative_words(selected_user, df)
+        nw = analyzer.count_negative_words(df)
 
         # Stats Area
         st.title("Top Statistics")
@@ -99,15 +99,8 @@ if uploaded_file is not None:
 
         if num_of_words != 0:
 
-            # WordCloud
-            st.title("Wordcloud")
-            df_wc = analyzer.create_wordcloud(selected_user,df)
-            fig,ax = plt.subplots()
-            ax.imshow(df_wc)
-            st.pyplot(fig)
-
             # most common words
-            most_common_df = analyzer.most_common_words(selected_user,df)
+            most_common_df = analyzer.most_common_words(df)
 
             fig,ax = plt.subplots()
 
@@ -117,8 +110,27 @@ if uploaded_file is not None:
             st.title('Most frequent words')
             st.pyplot(fig)
 
+            # WordCloud
+            st.title("Wordcloud")
+            df_wc = analyzer.create_wordcloud(df)
+            fig, ax = plt.subplots()
+            ax.imshow(df_wc)
+            st.pyplot(fig)
+
+            # most negative words
+            most_neg_df = analyzer.most_neg_words(df)
+            if most_neg_df.shape[0]!=0:
+
+                fig, ax = plt.subplots()
+
+                ax.barh(most_neg_df[0], most_neg_df[1])
+                plt.xticks(rotation='vertical')
+
+                st.title('Most negative words')
+                st.pyplot(fig)
+
             # emoji analysis
-            emoji_df = analyzer.emoji_helper(selected_user,df)
+            emoji_df = analyzer.emoji_helper(df)
             if emoji_df.shape[0]!=0:
                 st.title("Emoji Analysis")
 
@@ -138,7 +150,7 @@ if uploaded_file is not None:
             with col1:
                 # daily timeline
                 st.title("Daily Timeline")
-                daily_timeline = analyzer.daily_timeline(selected_user, df)
+                daily_timeline = df.groupby('only_date').count()['message'].reset_index()
                 fig, ax = plt.subplots()
                 ax.plot(daily_timeline['only_date'], daily_timeline['message'], color='black')
                 plt.xticks(rotation='vertical')
@@ -147,7 +159,7 @@ if uploaded_file is not None:
             with col2:
                 # monthly timeline
                 st.title("Monthly Timeline")
-                timeline = analyzer.monthly_timeline(selected_user, df)
+                timeline = analyzer.monthly_timeline(df)
                 fig, ax = plt.subplots()
                 ax.plot(timeline['time'], timeline['message'], color='green')
                 plt.xticks(rotation='vertical')
@@ -159,7 +171,7 @@ if uploaded_file is not None:
 
             with col1:
                 st.header("Most busy day")
-                busy_day = analyzer.week_activity_map(selected_user, df)
+                busy_day = df['day_name'].value_counts()
                 fig, ax = plt.subplots()
                 ax.bar(busy_day.index, busy_day.values, color='purple')
                 plt.xticks(rotation='vertical')
@@ -167,14 +179,14 @@ if uploaded_file is not None:
 
             with col2:
                 st.header("Most busy month")
-                busy_month = analyzer.month_activity_map(selected_user, df)
+                busy_month = df['month'].value_counts()
                 fig, ax = plt.subplots()
                 ax.bar(busy_month.index, busy_month.values, color='orange')
                 plt.xticks(rotation='vertical')
                 st.pyplot(fig)
 
             st.title("Weekly Activity HeatMap")
-            user_heatmap = analyzer.activity_heatmap(selected_user, df)
+            user_heatmap = df.pivot_table(index='day_name', columns='period', values='message', aggfunc='count').fillna(0)
             fig, ax = plt.subplots()
             ax = sns.heatmap(user_heatmap)
             st.pyplot(fig)

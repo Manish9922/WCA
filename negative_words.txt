@@ -1391,7 +1391,6 @@ dripped
 dripping
 drippy
 drips
-drones
 droop
 droops
 drop_out

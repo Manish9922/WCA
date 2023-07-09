@@ -1,4 +1,5 @@
 .
+•
 ..
 ...
 '
@@ -10,8 +11,19 @@
 (
 )
 ?
+@
+$
+&
+*
+!
+/
+\
+,
+:
+:-
 -
 --
++1
 1
 2
 3
@@ -23,6 +35,8 @@
 9
 0
 a
+am
+pm
 aadi
 aaj
 aap
@@ -31,6 +45,10 @@ aata
 aati
 aaya
 aaye
+aa
+gya
+sb
+h
 ab
 abbe
 abbey

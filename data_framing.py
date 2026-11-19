@@ -1,31 +1,52 @@
 import re
 import pandas as pd
 
+
 def frame_data(data):
-    pattern = '\d{1,2}/\d{1,2}/\d{2,4},\s\d{1,2}:\d{2}\s-\s'
 
-    messages = re.split(pattern, data)[1:]
-    dates = re.findall(pattern, data)
+    pattern = r'(\d{1,2}/\d{1,2}/\d{2,4},\s\d{1,2}:\d{2}\s?(?:am|pm|AM|PM)?\s-\s)'
 
-    df = pd.DataFrame({'user_message': messages, 'message_date': dates})
-    # convert message_date type
-    df['message_date'] = pd.to_datetime(df['message_date'], format='%d/%m/%y, %H:%M - ')
+    parts = re.split(pattern, data)
+
+    messages = []
+    dates = []
+
+    for i in range(1, len(parts), 2):
+        dates.append(parts[i].strip(" - "))
+        messages.append(parts[i + 1])
+
+    df = pd.DataFrame({
+        'message_date': dates,
+        'user_message': messages
+    })
+
+    df['message_date'] = pd.to_datetime(
+        df['message_date'],
+        dayfirst=True,
+        errors='coerce'
+    )
+
+    df = df.dropna(subset=['message_date'])
 
     df.rename(columns={'message_date': 'date'}, inplace=True)
 
     users = []
     messages = []
+
     for message in df['user_message']:
-        entry = re.split('([\w\W]+?):\s', message)
-        if entry[1:]:  # user name
+
+        entry = re.split(r'([^:]+):\s', message, maxsplit=1)
+
+        if len(entry) >= 3:
             users.append(entry[1])
-            messages.append(" ".join(entry[2:]))
+            messages.append(entry[2])
         else:
             users.append('group_notification')
-            messages.append(entry[0])
+            messages.append(message)
 
     df['user'] = users
     df['message'] = messages
+
     df.drop(columns=['user_message'], inplace=True)
 
     df['only_date'] = df['date'].dt.date
@@ -37,16 +58,20 @@ def frame_data(data):
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
 
-    df = df.loc[df["user"] != 'group_notification']
+    df = df[df["user"] != 'group_notification']
 
     period = []
-    for hour in df[['day_name', 'hour']]['hour']:
+
+    for hour in df['hour']:
+
         if hour == 23:
-            period.append(str(hour) + "-" + str('00'))
+            period.append("23-00")
+
         elif hour == 0:
-            period.append(str('00') + "-" + str(hour + 1))
+            period.append("00-01")
+
         else:
-            period.append(str(hour) + "-" + str(hour + 1))
+            period.append(f"{hour}-{hour+1}")
 
     df['period'] = period
 

@@ -9,7 +9,7 @@ uploaded_file = st.sidebar.file_uploader("Choose a file")
 if uploaded_file is not None:
 
     bytes_data = uploaded_file.getvalue()
-    data = bytes_data.decode("utf-8")
+    data = data = bytes_data.decode("utf-8", errors="ignore")
     df = data_framing.frame_data(data)
 
     # fetch unique users
@@ -114,7 +114,8 @@ if uploaded_file is not None:
             st.title("Wordcloud")
             df_wc = analyzer.create_wordcloud(df)
             fig, ax = plt.subplots()
-            ax.imshow(df_wc)
+            if df_wc:
+                ax.imshow(df_wc)
             st.pyplot(fig)
 
             # most negative words
